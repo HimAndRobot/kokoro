@@ -45,7 +45,8 @@ COPY --chown=appuser:appuser api ./api
 COPY --chown=appuser:appuser web ./web
 COPY --chown=appuser:appuser docker/scripts/ ./
 RUN chmod +x ./entrypoint.sh && \
-    chmod -R 755 /app/api/src
+    chmod -R 755 /app/api/src && \
+    chown -R appuser:appuser /app/api/src
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
