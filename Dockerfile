@@ -21,8 +21,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
 
 # Create non-root user and set up directories and permissions
 RUN useradd -m -u 1000 appuser && \
-    mkdir -p /app/api/src/models/v1_0 && \
-    chmod -R 755 /app/api && \
+    mkdir -p /app && \
     chown -R appuser:appuser /app
 
 USER appuser
@@ -44,9 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY --chown=appuser:appuser api ./api
 COPY --chown=appuser:appuser web ./web
 COPY --chown=appuser:appuser docker/scripts/ ./
-RUN chmod +x ./entrypoint.sh && \
-    chmod -R 755 /app/api/src && \
-    chown -R appuser:appuser /app/api/src
+RUN chmod +x ./entrypoint.sh
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -59,14 +56,6 @@ ENV PYTHONUNBUFFERED=1 \
     ESPEAK_DATA_PATH=/usr/share/espeak-ng-data
 
 ENV DOWNLOAD_MODEL=true
-# Download model if enabled (as root to avoid permission issues)
-USER root
-RUN if [ "$DOWNLOAD_MODEL" = "true" ]; then \
-    /app/.venv/bin/python download_model.py --output api/src/models/v1_0 && \
-    chown -R appuser:appuser /app/api/src; \
-    fi
-USER appuser
-
 ENV DEVICE="cpu"
 # Run FastAPI server through entrypoint.sh
 CMD ["./entrypoint.sh"]
