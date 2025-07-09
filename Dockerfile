@@ -58,10 +58,13 @@ ENV PYTHONUNBUFFERED=1 \
     ESPEAK_DATA_PATH=/usr/share/espeak-ng-data
 
 ENV DOWNLOAD_MODEL=true
-# Download model if enabled
+# Download model if enabled (as root to avoid permission issues)
+USER root
 RUN if [ "$DOWNLOAD_MODEL" = "true" ]; then \
-    python download_model.py --output api/src/models/v1_0; \
+    /app/.venv/bin/python download_model.py --output api/src/models/v1_0 && \
+    chown -R appuser:appuser /app/api/src; \
     fi
+USER appuser
 
 ENV DEVICE="cpu"
 # Run FastAPI server through entrypoint.sh
