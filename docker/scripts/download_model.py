@@ -3,40 +3,10 @@
 
 import json
 import os
-import stat
 from pathlib import Path
 from urllib.request import urlretrieve
 
 from loguru import logger
-
-
-def setup_permissions(directory: str) -> None:
-    """Setup proper permissions for directory and its parent directories.
-    
-    Args:
-        directory: Directory path to setup permissions for
-    """
-    try:
-        # Ensure parent directories exist with proper permissions
-        parent_dir = os.path.dirname(directory)
-        if parent_dir and not os.path.exists(parent_dir):
-            os.makedirs(parent_dir, mode=0o755, exist_ok=True)
-            
-        # Set permissions for parent directory
-        if parent_dir and os.path.exists(parent_dir):
-            os.chmod(parent_dir, 0o755)
-            
-        # Create target directory if it doesn't exist
-        if not os.path.exists(directory):
-            os.makedirs(directory, mode=0o755, exist_ok=True)
-        
-        # Set permissions for target directory
-        os.chmod(directory, 0o755)
-        
-        logger.info(f"✓ Permissions set for {directory}")
-        
-    except Exception as e:
-        logger.warning(f"Could not set permissions for {directory}: {e}")
 
 
 def verify_files(model_path: str, config_path: str) -> bool:
@@ -76,9 +46,6 @@ def download_model(output_dir: str) -> None:
         output_dir: Directory to save model files
     """
     try:
-        # Setup permissions first
-        setup_permissions(output_dir)
-        
         # Create output directory
         os.makedirs(output_dir, exist_ok=True)
 
@@ -103,13 +70,9 @@ def download_model(output_dir: str) -> None:
         # Download files
         logger.info("Downloading model file...")
         urlretrieve(model_url, model_path)
-        # Set file permissions after download
-        os.chmod(model_path, 0o644)
 
         logger.info("Downloading config file...")
         urlretrieve(config_url, config_path)
-        # Set file permissions after download
-        os.chmod(config_path, 0o644)
 
         # Verify downloaded files
         if not verify_files(model_path, config_path):
