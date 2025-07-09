@@ -44,7 +44,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY --chown=appuser:appuser api ./api
 COPY --chown=appuser:appuser web ./web
 COPY --chown=appuser:appuser docker/scripts/ ./
-RUN chmod +x ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh && \
+    chmod -R 755 /app/api/src
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
