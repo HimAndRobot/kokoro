@@ -21,7 +21,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
 
 # Create non-root user and set up directories and permissions
 RUN useradd -m -u 1000 appuser && \
-    mkdir -p /app && \
+    mkdir -p /app/api/src/models/v1_0 && \
     chown -R appuser:appuser /app
 
 USER appuser
@@ -56,6 +56,11 @@ ENV PYTHONUNBUFFERED=1 \
     ESPEAK_DATA_PATH=/usr/share/espeak-ng-data
 
 ENV DOWNLOAD_MODEL=true
+# Download model if enabled
+RUN if [ "$DOWNLOAD_MODEL" = "true" ]; then \
+    python download_model.py --output api/src/models/v1_0; \
+    fi
+
 ENV DEVICE="cpu"
 # Run FastAPI server through entrypoint.sh
 CMD ["./entrypoint.sh"]
