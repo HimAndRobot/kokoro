@@ -22,38 +22,29 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
 # Create non-root user and set up directories and permissions
 RUN useradd -m -u 1000 appuser && \
     mkdir -p /app/api/src/models/v1_0 && \
+    chmod -R 755 /app/api && \
     chown -R appuser:appuser /app
 
+USER appuser
 WORKDIR /app
 
 # Copy dependency files
-COPY pyproject.toml ./pyproject.toml
+COPY --chown=appuser:appuser pyproject.toml ./pyproject.toml
 
-# Install Rust (required to build sudachipy and pyopenjtalk-plus) as root
+# Install Rust (required to build sudachipy and pyopenjtalk-plus)
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="/root/.cargo/bin:$PATH"
+ENV PATH="/home/appuser/.cargo/bin:$PATH"
 
-# Install dependencies as root
+# Install dependencies
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv venv --python 3.10 && \
     uv sync --extra cpu
 
-# Copy project files and scripts
-COPY api ./api
-COPY web ./web
-COPY docker/scripts/ ./
-
-# Download model as root before switching to appuser
-ENV DOWNLOAD_MODEL=true
-RUN if [ "$DOWNLOAD_MODEL" = "true" ]; then \
-    python download_model.py --output api/src/models/v1_0; \
-    fi
-
-# Fix permissions after download and switch to appuser
-RUN chown -R appuser:appuser /app && \
-    chmod +x ./entrypoint.sh
-
-USER appuser
+# Copy project files including models
+COPY --chown=appuser:appuser api ./api
+COPY --chown=appuser:appuser web ./web
+COPY --chown=appuser:appuser docker/scripts/ ./
+RUN chmod +x ./entrypoint.sh
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -64,6 +55,12 @@ ENV PYTHONUNBUFFERED=1 \
     PHONEMIZER_ESPEAK_PATH=/usr/bin \
     PHONEMIZER_ESPEAK_DATA=/usr/share/espeak-ng-data \
     ESPEAK_DATA_PATH=/usr/share/espeak-ng-data
+
+ENV DOWNLOAD_MODEL=true
+# Download model if enabled
+RUN if [ "$DOWNLOAD_MODEL" = "true" ]; then \
+    python download_model.py --output api/src/models/v1_0; \
+    fi
 
 ENV DEVICE="cpu"
 # Run FastAPI server through entrypoint.sh
